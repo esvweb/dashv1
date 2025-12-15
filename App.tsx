@@ -66,6 +66,7 @@ import { getTimeMultiplier, getComparisonLabel } from './utils';
 import { useDashboardData } from './src/hooks/useDashboardData';
 import { LeadsDrilldownModal } from './src/components/modals/LeadsDrilldownModal';
 import { InterestedLeadsDrilldownModal } from './src/components/modals/InterestedLeadsDrilldownModal';
+import { LoginScreen } from './src/components/auth/LoginScreen';
 
 // --- Utility Functions ---
 
@@ -1010,7 +1011,9 @@ const PerformanceMonitorWidget = ({ agentData }: { agentData?: AgentPerformance[
 
 
 // --- MAIN APP COMPONENT ---
-export default function App() {
+// --- Authenticated Layout ---
+const DashboardContent = () => {
+    // --- Dashboard Logic ---
     const {
         currentView,
         globalFilter,
@@ -1046,7 +1049,7 @@ export default function App() {
         }
     };
 
-    // Dashboard View - Reverted to clean 2x2 grid + widgets
+    // Dashboard View
     const DashboardView = () => (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1104,11 +1107,38 @@ export default function App() {
                         {currentView === 'agent' && <AgentActivityView activityData={processedData.activity} agentPerfData={processedData.agents} />}
                         {currentView === 'sales' && <SalesPerformanceView countryData={processedData.countries} languageData={processedData.languages} />}
                     </div>
-
-                    <LeadsDrilldownModal isOpen={isLeadsModalOpen} onClose={() => setIsLeadsModalOpen(false)} />
-                    <InterestedLeadsDrilldownModal isOpen={isInterestedModalOpen} onClose={() => setIsInterestedModalOpen(false)} />
                 </main>
             </div>
+
+            {/* Modals */}
+            <LeadsDrilldownModal
+                isOpen={isLeadsModalOpen}
+                onClose={() => setIsLeadsModalOpen(false)}
+                globalTimeframe={globalFilter}
+            />
+            <InterestedLeadsDrilldownModal
+                isOpen={isInterestedModalOpen}
+                onClose={() => setIsInterestedModalOpen(false)}
+            />
         </div>
     );
+};
+
+// --- MAIN APP COMPONENT ---
+export default function App() {
+    // --- Auth State ---
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return sessionStorage.getItem('executive_auth') === 'true';
+    });
+
+    const handleLogin = () => {
+        sessionStorage.setItem('executive_auth', 'true');
+        setIsAuthenticated(true);
+    };
+
+    if (!isAuthenticated) {
+        return <LoginScreen onLogin={handleLogin} />;
+    }
+
+    return <DashboardContent />;
 }
